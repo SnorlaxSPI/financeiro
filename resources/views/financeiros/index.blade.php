@@ -12,15 +12,20 @@
                     <th>MÊS ANT.</th>
                     <th>À PAGAR</th>
                     <th>PAGO</th>
+                    <th>AÇÕES</th> <!-- Nova coluna para ações -->
                 </tr>
             </thead>
             <tbody id="tabela-financeiros">
                 @foreach($financeiros as $fin)
-                    <tr>
+                    <tr id="linha-{{ $fin->id }}">
                         <td>{{ $fin->descricao }}</td>
                         <td>{{ $fin->mes_anterior }}</td>
                         <td class="valor-a-pagar">R$ {{ number_format($fin->a_pagar, 2, ',', '.') }}</td>
                         <td class="valor-pago">R$ {{ number_format($fin->pago, 2, ',', '.') }}</td>
+                        <td>
+                            <a href="{{ route('financeiros.edit', $fin->id) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
+                            <button class="btn btn-danger btn-sm btn-excluir" data-id="{{ $fin->id }}">🗑 Excluir</button>
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
@@ -29,6 +34,7 @@
                     <td colspan="2"><strong>Total</strong></td>
                     <td><strong id="total-a-pagar">R$ {{ number_format($financeiros->sum('a_pagar'), 2, ',', '.') }}</strong></td>
                     <td><strong id="total-pago">R$ {{ number_format($financeiros->sum('pago'), 2, ',', '.') }}</strong></td>
+                    <td></td>
                 </tr>
             </tfoot>
         </table>
@@ -70,15 +76,37 @@
                     data: formData,
                     success: function (response) {
                         let novoItem = `
-                            <tr>
+                            <tr id="linha-${response.id}">
                                 <td>${response.descricao}</td>
                                 <td>0</td>
                                 <td class="valor-a-pagar">R$ ${parseFloat(response.a_pagar).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 <td class="valor-pago">R$ ${parseFloat(response.pago ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                                <td>
+                                    <a href="/financeiros/${response.id}/edit" class="btn btn-warning btn-sm">✏️ Editar</a>
+                                    <button class="btn btn-danger btn-sm btn-excluir" data-id="${response.id}">🗑 Excluir</button>
+                                </td>
                             </tr>
                         `;
 
                         $("#tabela-financeiros").append(novoItem);
+                        atualizarTotais();
+                    }
+                });
+            });
+
+            // AJAX para excluir um registro sem recarregar
+            $(document).on("click", ".btn-excluir", function () {
+                let id = $(this).data("id");
+                if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+
+                $.ajax({
+                    type: "DELETE",
+                    url: `/financeiros/${id}`,
+                    data: {
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function () {
+                        $("#linha-" + id).remove();
                         atualizarTotais();
                     }
                 });
