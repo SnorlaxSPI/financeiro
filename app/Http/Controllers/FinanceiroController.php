@@ -27,11 +27,17 @@ class FinanceiroController extends Controller
 
     public function store(Request $request)
     {
-        Financeiro::create($request->validate([
+        $validated = $request->validate([
             'descricao' => 'required',
-            'a_pagar' => 'required|numeric',
-            'pago' => 'nullable|numeric'
-        ]));
+            'a_pagar'   => 'required|numeric',
+            'pago'      => 'nullable|numeric'
+        ]);
+
+        $financeiro = Financeiro::create($validated);
+
+        if ($request->ajax()) {
+            return response()->json($financeiro);
+        }
 
         return redirect()->route('financeiros.index');
     }

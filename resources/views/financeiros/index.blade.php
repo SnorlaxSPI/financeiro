@@ -1,116 +1,181 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h2>Financeiro Pessoal</h2>
-        <a href="{{ route('financeiros.create') }}" class="btn btn-primary">Novo Registro</a>
+<!-- Se o jQuery já estiver incluído no layout, remova essa linha -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-        <table class="table mt-3">
-            <thead>
-                <tr>
-                    <th>DESCRIÇÃO</th>
-                    <th>MÊS ANT.</th>
-                    <th>À PAGAR</th>
-                    <th>PAGO</th>
-                    <th>AÇÕES</th> <!-- Nova coluna para ações -->
-                </tr>
-            </thead>
-            <tbody id="tabela-financeiros">
-                @foreach($financeiros as $fin)
-                    <tr id="linha-{{ $fin->id }}">
-                        <td>{{ $fin->descricao }}</td>
-                        <td>{{ $fin->mes_anterior }}</td>
-                        <td class="valor-a-pagar">R$ {{ number_format($fin->a_pagar, 2, ',', '.') }}</td>
-                        <td class="valor-pago">R$ {{ number_format($fin->pago, 2, ',', '.') }}</td>
-                        <td>
-                            <a href="{{ route('financeiros.edit', $fin->id) }}" class="btn btn-warning btn-sm">✏️ Editar</a>
-                            <button class="btn btn-danger btn-sm btn-excluir" data-id="{{ $fin->id }}">🗑 Excluir</button>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="2"><strong>Total</strong></td>
-                    <td><strong id="total-a-pagar">R$ {{ number_format($financeiros->sum('a_pagar'), 2, ',', '.') }}</strong></td>
-                    <td><strong id="total-pago">R$ {{ number_format($financeiros->sum('pago'), 2, ',', '.') }}</strong></td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+<style>
+    /* Caso a faixa preta venha de algum footer embutido, desabilite-o */
+    footer,
+    .footer {
+        display: none !important;
+    }
+
+    /* Se houver padding ou margin extra no final da página, podemos ajustar */
+    body {
+        margin-bottom: 0;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
+            <h2 class="mb-0">Financeiro Pessoal</h2>
+            <a href="{{ route('financeiros.create') }}" class="btn btn-light">Novo Registro</a>
+        </div>
+        <div class="card-body">
+            <!-- Totais exibidos se necessário -->
+            <div class="row mb-3">
+                <div class="col">
+                    <h5>Total À Pagar: <span id="total-a-pagar">R$ 0,00</span></h5>
+                </div>
+                <div class="col">
+                    <h5>Total Pago: <span id="total-pago">R$ 0,00</span></h5>
+                </div>
+            </div>
+
+            <!-- Tabela de registros -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Mês Ant.</th>
+                            <th>À Pagar (R$)</th>
+                            <th>Pago (R$)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-financeiros">
+                        @foreach($financeiros as $fin)
+                        <tr id="linha-{{ $fin->id }}">
+                            <td>{{ $fin->descricao }}</td>
+                            <td>0</td> {{-- Placeholder para "Mês Ant." --}}
+                            <td class="valor-a-pagar">R$ {{ number_format($fin->a_pagar, 2, ',', '.') }}</td>
+                            <td class="valor-pago">R$ {{ number_format($fin->pago ?? 0, 2, ',', '.') }}</td>
+                            <td>
+                                <a href="{{ route('financeiros.edit', $fin->id) }}" class="btn btn-warning btn-sm">Editar</a>
+                                <button class="btn btn-danger btn-sm btn-excluir" data-id="{{ $fin->id }}">Excluir</button>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Formulário AJAX para novo registro -->
+            <form id="form-novo-registro" class="mt-4">
+                @csrf
+                <div class="mb-3">
+                    <label for="descricao" class="form-label">Descrição</label>
+                    <input type="text" name="descricao" id="descricao" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="a_pagar" class="form-label">À Pagar (R$)</label>
+                    <input type="number" name="a_pagar" id="a_pagar" class="form-control" required step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label for="pago" class="form-label">Pago (R$)</label>
+                    <input type="number" name="pago" id="pago" class="form-control" step="0.01">
+                </div>
+                <button type="submit" class="btn btn-success">Salvar Registro</button>
+            </form>
+        </div>
     </div>
+</div>
 
-    {{-- Adicionando AJAX para atualizar os totais automaticamente --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Função para atualizar os totais
-            function atualizarTotais() {
-                let totalPagar = 0;
-                let totalPago = 0;
+<script>
+    $(document).ready(function() {
+        console.log("Document ready");
 
-                $(".valor-a-pagar").each(function () {
-                    totalPagar += parseFloat($(this).text().replace('R$ ', '').replace('.', '').replace(',', '.'));
-                });
+        // Função para atualizar totais
+        function atualizarTotais() {
+            let totalPagar = 0;
+            let totalPago = 0;
 
-                $(".valor-pago").each(function () {
-                    totalPago += parseFloat($(this).text().replace('R$ ', '').replace('.', '').replace(',', '.'));
-                });
+            $(".valor-a-pagar").each(function() {
+                let valor = parseFloat($(this).text().replace('R$ ', '').replace('.', '').replace(',', '.'));
+                totalPagar += isNaN(valor) ? 0 : valor;
+            });
 
-                $("#total-a-pagar").text("R$ " + totalPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
-                $("#total-pago").text("R$ " + totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
-            }
+            $(".valor-pago").each(function() {
+                let valor = parseFloat($(this).text().replace('R$ ', '').replace('.', '').replace(',', '.'));
+                totalPago += isNaN(valor) ? 0 : valor;
+            });
 
-            // Atualiza totais ao carregar a página
-            atualizarTotais();
+            $("#total-a-pagar").text("R$ " + totalPagar.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2
+            }));
+            $("#total-pago").text("R$ " + totalPago.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2
+            }));
+        }
 
-            // AJAX para inserir um novo registro sem recarregar
-            $("#form-novo-registro").submit(function (e) {
-                e.preventDefault();
+        atualizarTotais();
 
-                let formData = $(this).serialize();
+        // AJAX para inserir novo registro
+        $("#form-novo-registro").submit(function(e) {
+            e.preventDefault();
+            let formData = $(this).serialize();
 
-                $.ajax({
-                    type: "POST",
-                    url: "{{ route('financeiros.store') }}",
-                    data: formData,
-                    success: function (response) {
-                        let novoItem = `
+            $.ajax({
+                type: "POST",
+                url: "{{ route('financeiros.store') }}",
+                data: formData,
+                success: function(response) {
+                    let novoItem = `
                             <tr id="linha-${response.id}">
                                 <td>${response.descricao}</td>
                                 <td>0</td>
                                 <td class="valor-a-pagar">R$ ${parseFloat(response.a_pagar).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 <td class="valor-pago">R$ ${parseFloat(response.pago ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
                                 <td>
-                                    <a href="/financeiros/${response.id}/edit" class="btn btn-warning btn-sm">✏️ Editar</a>
-                                    <button class="btn btn-danger btn-sm btn-excluir" data-id="${response.id}">🗑 Excluir</button>
+                                    <a href="/financeiros/${response.id}/edit" class="btn btn-warning btn-sm">Editar</a>
+                                    <button class="btn btn-danger btn-sm btn-excluir" data-id="${response.id}">Excluir</button>
                                 </td>
                             </tr>
                         `;
-
-                        $("#tabela-financeiros").append(novoItem);
-                        atualizarTotais();
-                    }
-                });
-            });
-
-            // AJAX para excluir um registro sem recarregar
-            $(document).on("click", ".btn-excluir", function () {
-                let id = $(this).data("id");
-                if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-
-                $.ajax({
-                    type: "DELETE",
-                    url: `/financeiros/${id}`,
-                    data: {
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function () {
-                        $("#linha-" + id).remove();
-                        atualizarTotais();
-                    }
-                });
+                    $("#tabela-financeiros").append(novoItem);
+                    atualizarTotais();
+                    $("#form-novo-registro")[0].reset();
+                },
+                error: function(xhr) {
+                    console.error("Erro ao inserir registro:", xhr);
+                    alert('Erro ao adicionar registro.');
+                }
             });
         });
-    </script>
+
+        // AJAX para excluir registro
+        $(document).on('click', '.btn-excluir', function(e) {
+            e.preventDefault();
+            console.log("Botão excluir clicado.");
+            let id = $(this).data('id');
+            if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+
+            $.ajax({
+                url: `/financeiros/${id}`,
+                type: 'DELETE',
+                data: {
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $(`#linha-${id}`).fadeOut(500, function() {
+                            $(this).remove();
+                            atualizarTotais();
+                        });
+                        alert('Registro excluído com sucesso!');
+                    } else {
+                        alert('Erro ao excluir registro.');
+                    }
+                },
+                error: function(xhr) {
+                    console.error("Erro AJAX:", xhr);
+                    alert('Erro ao excluir registro.');
+                }
+            });
+        });
+    });
+</script>
 @endsection
