@@ -64,9 +64,11 @@ class FinanceiroController extends Controller
         // Redireciona para a lista de registros
         return redirect()->route('financeiros.index')->with('success', 'Registro atualizado com sucesso!');
     }
-
     public function destroy(string $id)
     {
-        //
+        $financeiro = Financeiro::findOrFail($id);
+        $financeiro->delete();
+
+        return response()->json(['success' => true]);
     }
 }
