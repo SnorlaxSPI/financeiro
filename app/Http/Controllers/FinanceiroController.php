@@ -47,11 +47,6 @@ class FinanceiroController extends Controller
         //
     }
 
-    // public function edit(string $id)
-    // {
-    //     //
-    // }
-
     public function update(Request $request, string $id)
     {
         // Validação dos dados enviados no formulário

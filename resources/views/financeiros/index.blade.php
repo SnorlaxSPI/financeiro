@@ -4,19 +4,6 @@
 <!-- Se o jQuery já estiver incluído no layout, remova essa linha -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<style>
-    /* Caso a faixa preta venha de algum footer embutido, desabilite-o */
-    footer,
-    .footer {
-        display: none !important;
-    }
-
-    /* Se houver padding ou margin extra no final da página, podemos ajustar */
-    body {
-        margin-bottom: 0;
-    }
-</style>
-
 <div class="container mt-5">
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center bg-primary text-white">
