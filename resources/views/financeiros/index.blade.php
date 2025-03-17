@@ -12,7 +12,7 @@
         </div>
         <div class="card-body">
             <!-- Totais exibidos se necessário -->
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <div class="col">
                     <h5>Total À Pagar: <span id="total-a-pagar">R$ 0,00</span></h5>
                 </div>
@@ -27,7 +27,7 @@
                     <thead class="table-light">
                         <tr>
                             <th>Descrição</th>
-                            <th>Mês Ant.</th>
+                            <th>Mês Atual</th>
                             <th>À Pagar (R$)</th>
                             <th>Pago (R$)</th>
                             <th>Ações</th>
@@ -37,7 +37,7 @@
                         @foreach($financeiros as $fin)
                         <tr id="linha-{{ $fin->id }}">
                             <td>{{ $fin->descricao }}</td>
-                            <td>0</td> {{-- Placeholder para "Mês Ant." --}}
+                            <td>{{ ucfirst(\Carbon\Carbon::now()->locale('pt_BR')->translatedFormat('F Y')) }}</td>
                             <td class="valor-a-pagar">R$ {{ number_format($fin->a_pagar, 2, ',', '.') }}</td>
                             <td class="valor-pago">R$ {{ number_format($fin->pago ?? 0, 2, ',', '.') }}</td>
                             <td>
@@ -49,24 +49,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Formulário AJAX para novo registro -->
-            <form id="form-novo-registro" class="mt-4">
-                @csrf
-                <div class="mb-3">
-                    <label for="descricao" class="form-label">Descrição</label>
-                    <input type="text" name="descricao" id="descricao" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label for="a_pagar" class="form-label">À Pagar (R$)</label>
-                    <input type="number" name="a_pagar" id="a_pagar" class="form-control" required step="0.01">
-                </div>
-                <div class="mb-3">
-                    <label for="pago" class="form-label">Pago (R$)</label>
-                    <input type="number" name="pago" id="pago" class="form-control" step="0.01">
-                </div>
-                <button type="submit" class="btn btn-success">Salvar Registro</button>
-            </form>
         </div>
     </div>
 </div>
