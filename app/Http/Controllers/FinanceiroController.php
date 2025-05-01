@@ -39,37 +39,45 @@ class FinanceiroController extends Controller
             return response()->json($financeiro);
         }
 
-        return redirect()->route('financeiros.index');
+        return redirect()->route('financeiros.index')->with('success', 'Registro criado com sucesso!');
     }
 
     public function show(string $id)
     {
-        //
+        // Caso deseje implementar futuramente
     }
 
     public function update(Request $request, string $id)
     {
-        // Validação dos dados enviados no formulário
         $validatedData = $request->validate([
             'descricao' => 'required',
             'a_pagar' => 'required|numeric',
             'pago' => 'nullable|numeric'
         ]);
 
-        // Busca o registro a ser atualizado
         $financeiro = Financeiro::findOrFail($id);
-
-        // Atualiza os campos do registro
         $financeiro->update($validatedData);
 
-        // Redireciona para a lista de registros
         return redirect()->route('financeiros.index')->with('success', 'Registro atualizado com sucesso!');
     }
+
     public function destroy(string $id)
     {
-        $financeiro = Financeiro::findOrFail($id);
-        $financeiro->delete();
+        try {
+            $financeiro = Financeiro::findOrFail($id);
+            $financeiro->delete();
 
-        return response()->json(['success' => true]);
+            if (request()->ajax()) {
+                return response()->json(['success' => true]);
+            }
+
+            return redirect()->route('financeiros.index')->with('success', 'Registro excluído com sucesso!');
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Erro ao excluir o registro.']);
+            }
+
+            return redirect()->route('financeiros.index')->with('error', 'Erro ao excluir o registro.');
+        }
     }
 }
