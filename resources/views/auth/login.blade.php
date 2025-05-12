@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Login - AFL Finanças</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
 
     <style>
         body {
@@ -111,15 +112,15 @@
     <div class="login-container">
         <div class="login-box">
             <h2>Login</h2>
-            <form action="{{ url('/login') }}" method="POST">
+            <form action="{{ route('login') }}" method="POST">
                 @csrf
                 <div class="form-group">
                     <label for="email">E-mail</label>
-                    <input type="email" name="email" value="{{ old('email') }}" required autofocus>
+                    <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus>
                 </div>
                 <div class="form-group">
                     <label for="password">Senha</label>
-                    <input type="password" name="password" required>
+                    <input type="password" id="password" name="password" required>
                 </div>
                 <div class="form-check">
                     <input type="checkbox" name="remember" id="remember">
@@ -130,6 +131,12 @@
                 </div>
                 <button type="submit" class="btn">Entrar</button>
             </form>
+
+            @if ($errors->any())
+                <div>
+                    <p>{{ $errors->first('email') }}</p>
+                </div>
+            @endif
         </div>
     </div>
 
